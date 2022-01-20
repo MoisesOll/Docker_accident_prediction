@@ -1,0 +1,38 @@
+# docker build --no-cache -t accident_server -f Dockerfile.server .
+# docker run -p 3005:3005 --add-host=host.docker.internal:host-gateway -it accident_server 
+FROM python:3.8.5-slim
+
+LABEL version="0.1.0"
+LABEL release-date="2021-01-19"
+
+WORKDIR /app
+
+# We will copy only models and server, nothing more is needed.
+# Copy models
+# Instead use explicit copy for each file
+ADD models /app/models
+
+# Copy server.py
+ADD server.py /app/server.py
+
+# Expose port 3005 for api usage
+EXPOSE 3005
+
+# Install dependencies
+RUN apt-get clean
+RUN apt-get update
+RUN apt-get install libgomp1 -y
+RUN pip install --upgrade pip 
+RUN pip install flask 
+RUN pip install gunicorn 
+RUN pip install numpy 
+RUN pip install sklearn 
+RUN pip install pandas
+RUN pip install lightgbm
+RUN pip install flask-cors
+
+# Launch the python web server on host 0.0.0.0
+# port 3005
+# with only 1 thread
+# Capturing logs
+CMD gunicorn --bind 0.0.0.0:3005 server:app --timeout 60000 --workers=1 --capture-output --reload

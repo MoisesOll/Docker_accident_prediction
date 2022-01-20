@@ -1,0 +1,41 @@
+# docker build -t accidents_dev -f Dockerfile.development .
+# docker run -v `pwd`:/home/joyvant/accident_prediction -p 8888:8888 --rm --add-host=host.docker.internal:host-gateway  -it accidents_dev
+
+# Image base
+FROM jupyter/minimal-notebook:latest
+
+LABEL description="This Docker image allow to make data science processing in Jupyer in anywhere"
+LABEL version="0.1.0"
+LABEL release-date="2022-01-19"
+
+USER root
+
+# Update the package manager
+RUN python3 -m pip install --upgrade pip
+WORKDIR /home/joyvant
+
+# Copy only the file where we indicate all 
+# development dependencies
+
+COPY requirements.txt /home/joyvant/requirements.txt
+
+# Adding to the PATH variable, where are all executable
+# Util for all packages installed
+ENV PATH="/home/joyvant/.local/bin:${PATH}"
+
+# We install all packages inside requirements.txt
+# as non root user
+RUN python3 -m pip install --user -r requirements.txt
+
+# Set the working directory
+# This directory will be the base directory of jupyter
+# We will mount every data here 
+WORKDIR /home/joyvant/accident_prediction
+
+# Expose the port 8888
+# This port is used by jupyter to open the web server
+EXPOSE 8888:8888
+
+# We indicate to execute jupyter on this port at the root direction 0.0.0.0
+# and allowing execute root commands
+CMD python3 -m jupyter notebook -i 0.0.0.0 --port 8888 --allow-root
